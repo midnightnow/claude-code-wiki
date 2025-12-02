@@ -1,0 +1,242 @@
+#!/bin/bash
+#═══════════════════════════════════════════════════════════════════════════════
+#  CLAUDE CODE WIKI - Main Entry Point
+#  Ultra-Agentic Wiki System for Claude Code
+#═══════════════════════════════════════════════════════════════════════════════
+
+set -e
+
+# Find our installation directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WIKI_HOME="$(dirname "$SCRIPT_DIR")"
+
+# Source common library
+source "$WIKI_HOME/lib/common.sh"
+
+#───────────────────────────────────────────────────────────────────────────────
+# Help
+#───────────────────────────────────────────────────────────────────────────────
+
+show_help() {
+    cat << EOF
+${BOLD}Claude Code Wiki${NC} v$WIKI_VERSION
+Ultra-Agentic Wiki System for codebase understanding
+
+${BOLD}USAGE${NC}
+    wiki <command> [options] [arguments]
+
+${BOLD}COMMANDS${NC}
+    ${GREEN}scan${NC}              Index all projects in configured directories
+    ${GREEN}find${NC} <query>      Search across all indexed projects
+    ${GREEN}list${NC}              List all indexed projects
+    ${GREEN}info${NC} <project>    Show detailed info about a project
+    ${GREEN}prepare${NC} <project> Generate context manifest for a project
+    ${GREEN}health${NC}            Run health check and diagnostics
+    ${GREEN}fix${NC}               Auto-fix common issues
+    ${GREEN}config${NC}            Show or edit configuration
+    ${GREEN}update${NC}            Update to latest version
+    ${GREEN}uninstall${NC}         Remove Claude Code Wiki
+
+${BOLD}OPTIONS${NC}
+    -h, --help        Show this help message
+    -v, --version     Show version
+    -d, --debug       Enable debug output
+    -q, --quiet       Suppress non-essential output
+
+${BOLD}EXAMPLES${NC}
+    wiki scan                    # Index all projects
+    wiki find "auth"             # Search for auth-related files
+    wiki info myproject          # Get project details
+    wiki prepare ~/myapp         # Generate context for myapp
+
+${BOLD}CONFIGURATION${NC}
+    Config: $WIKI_CONFIG_FILE
+    Data:   $WIKI_DATA_DIR
+    Logs:   $WIKI_LOG_FILE
+
+${BOLD}MORE INFO${NC}
+    https://github.com/patrickdellis/claude-code-wiki
+EOF
+}
+
+show_version() {
+    echo "Claude Code Wiki v$WIKI_VERSION"
+    echo "Platform: $WIKI_PLATFORM"
+    echo "Database: $WIKI_DB"
+}
+
+#───────────────────────────────────────────────────────────────────────────────
+# Command Handlers
+#───────────────────────────────────────────────────────────────────────────────
+
+cmd_scan() {
+    source "$WIKI_HOME/lib/indexer.sh"
+    wiki_scan "$@"
+}
+
+cmd_find() {
+    source "$WIKI_HOME/lib/indexer.sh"
+    wiki_search "$@"
+}
+
+cmd_list() {
+    source "$WIKI_HOME/lib/indexer.sh"
+    wiki_list_projects "$@"
+}
+
+cmd_info() {
+    source "$WIKI_HOME/lib/indexer.sh"
+    wiki_project_info "$@"
+}
+
+cmd_prepare() {
+    source "$WIKI_HOME/lib/context.sh"
+    wiki_generate_context "$@"
+}
+
+cmd_health() {
+    source "$WIKI_HOME/lib/health.sh"
+    wiki_health_check "$@"
+}
+
+cmd_fix() {
+    source "$WIKI_HOME/lib/health.sh"
+    wiki_auto_fix "$@"
+}
+
+cmd_config() {
+    if [[ "$1" == "edit" ]]; then
+        ${EDITOR:-nano} "$WIKI_CONFIG_FILE"
+    elif [[ "$1" == "show" || -z "$1" ]]; then
+        if [[ -f "$WIKI_CONFIG_FILE" ]]; then
+            cat "$WIKI_CONFIG_FILE"
+        else
+            wiki_warn "No config file found. Creating default..."
+            wiki_save_config
+            cat "$WIKI_CONFIG_FILE"
+        fi
+    elif [[ "$1" == "reset" ]]; then
+        wiki_save_config
+        wiki_info "Config reset to defaults"
+    else
+        wiki_error "Unknown config command: $1"
+        echo "Usage: wiki config [show|edit|reset]"
+    fi
+}
+
+cmd_update() {
+    wiki_print_header "Updating Claude Code Wiki"
+
+    local install_dir="$WIKI_HOME"
+    if [[ -d "$install_dir/.git" ]]; then
+        wiki_info "Pulling latest changes..."
+        cd "$install_dir"
+        git pull origin main
+        wiki_info "Running setup..."
+        bash "$install_dir/setup.sh"
+        wiki_info "Update complete!"
+    else
+        wiki_warn "Not installed via git. Re-run installer:"
+        echo "curl -sL https://raw.githubusercontent.com/patrickdellis/claude-code-wiki/main/install.sh | bash"
+    fi
+}
+
+cmd_uninstall() {
+    wiki_print_header "Uninstalling Claude Code Wiki"
+
+    echo "This will remove:"
+    echo "  - Wiki scripts and commands"
+    echo "  - Shell integration"
+    echo "  - Database (optional)"
+    echo ""
+
+    if wiki_confirm "Proceed with uninstall?"; then
+        # Remove shell integration
+        for rc in ~/.zshrc ~/.bashrc; do
+            if [[ -f "$rc" ]]; then
+                # Remove our block from shell config
+                sed -i.bak '/CLAUDE CODE WIKI/,/^#═.*═$/d' "$rc" 2>/dev/null || true
+            fi
+        done
+
+        # Remove symlinks from Claude commands
+        rm -f "$CLAUDE_COMMANDS_DIR"/wiki-*.md 2>/dev/null || true
+
+        if wiki_confirm "Remove database and cached data?"; then
+            rm -rf "$WIKI_DATA_DIR" "$WIKI_STATE_DIR" "$WIKI_CACHE_DIR"
+        fi
+
+        if wiki_confirm "Remove configuration?"; then
+            rm -rf "$WIKI_CONFIG_DIR"
+        fi
+
+        wiki_info "Uninstall complete. You may want to remove $WIKI_HOME manually."
+    else
+        wiki_info "Uninstall cancelled."
+    fi
+}
+
+#───────────────────────────────────────────────────────────────────────────────
+# Main
+#───────────────────────────────────────────────────────────────────────────────
+
+main() {
+    # Parse global options
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -v|--version)
+                show_version
+                exit 0
+                ;;
+            -d|--debug)
+                export WIKI_DEBUG=1
+                shift
+                ;;
+            -q|--quiet)
+                export WIKI_QUIET=1
+                shift
+                ;;
+            -*)
+                wiki_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    # Get command
+    local cmd="${1:-help}"
+    shift 2>/dev/null || true
+
+    # Ensure directories exist
+    wiki_init_dirs
+
+    # Dispatch command
+    case "$cmd" in
+        scan)      cmd_scan "$@" ;;
+        find|search) cmd_find "$@" ;;
+        list|ls)   cmd_list "$@" ;;
+        info)      cmd_info "$@" ;;
+        prepare|context) cmd_prepare "$@" ;;
+        health|check) cmd_health "$@" ;;
+        fix)       cmd_fix "$@" ;;
+        config)    cmd_config "$@" ;;
+        update)    cmd_update "$@" ;;
+        uninstall) cmd_uninstall "$@" ;;
+        help)      show_help ;;
+        *)
+            wiki_error "Unknown command: $cmd"
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

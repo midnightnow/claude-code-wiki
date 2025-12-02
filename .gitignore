@@ -1,0 +1,27 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Runtime files
+*.log
+*.lock
+*.pid
+
+# Local development
+.env
+.env.local
+
+# Test databases
+test.db
+*.db.backup
+
+# Build artifacts
+dist/
+build/
