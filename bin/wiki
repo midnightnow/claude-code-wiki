@@ -31,6 +31,8 @@ ${BOLD}COMMANDS${NC}
     ${GREEN}list${NC}              List all indexed projects
     ${GREEN}info${NC} <project>    Show detailed info about a project
     ${GREEN}prepare${NC} <project> Generate context manifest for a project
+    ${GREEN}ask${NC} <question>    Natural language query (requires external model)
+    ${GREEN}server${NC}            Start/stop HTTP API server for agents
     ${GREEN}health${NC}            Run health check and diagnostics
     ${GREEN}fix${NC}               Auto-fix common issues
     ${GREEN}config${NC}            Show or edit configuration
@@ -48,6 +50,8 @@ ${BOLD}EXAMPLES${NC}
     wiki find "auth"             # Search for auth-related files
     wiki info myproject          # Get project details
     wiki prepare ~/myapp         # Generate context for myapp
+    wiki server start            # Start API server for agents
+    wiki ask "how does auth work"# Query with natural language
 
 ${BOLD}CONFIGURATION${NC}
     Config: $WIKI_CONFIG_FILE
@@ -102,6 +106,62 @@ cmd_health() {
 cmd_fix() {
     source "$WIKI_HOME/lib/health.sh"
     wiki_auto_fix "$@"
+}
+
+cmd_server() {
+    source "$WIKI_HOME/lib/server.sh"
+    wiki_server "$@"
+}
+
+cmd_ask() {
+    local question="$*"
+    if [[ -z "$question" ]]; then
+        wiki_error "Usage: wiki ask <question>"
+        exit 1
+    fi
+
+    wiki_print_header "Wiki Query: $question"
+
+    # Search for relevant files
+    source "$WIKI_HOME/lib/indexer.sh"
+    wiki_db_init 2>/dev/null
+
+    echo ""
+    echo -e "${BOLD}Searching for relevant files...${NC}"
+    echo ""
+
+    # Search by keywords in the question
+    local keywords=$(echo "$question" | tr '[:upper:]' '[:lower:]' | tr -cs '[:alnum:]' ' ')
+    local found_files=""
+
+    for word in $keywords; do
+        [[ ${#word} -lt 3 ]] && continue  # Skip short words
+        local results=$(wiki_db_query "
+            SELECT DISTINCT p.name || '/' || f.filename
+            FROM files f
+            JOIN projects p ON f.project_id = p.id
+            WHERE f.filename LIKE '%$word%'
+               OR f.path LIKE '%$word%'
+            LIMIT 5;
+        " 2>/dev/null)
+        if [[ -n "$results" ]]; then
+            found_files="$found_files$results"$'\n'
+        fi
+    done
+
+    if [[ -n "$found_files" ]]; then
+        echo -e "${GREEN}Related files found:${NC}"
+        echo "$found_files" | sort -u | head -20
+        echo ""
+        echo -e "${CYAN}Tip:${NC} Use 'wiki prepare <project>' to generate full context,"
+        echo "     then ask an AI model to analyze GEMINI_CONTEXT.md"
+    else
+        echo -e "${YELLOW}No files found matching your query.${NC}"
+        echo ""
+        echo "Try:"
+        echo "  wiki find <keyword>    # Search with simpler terms"
+        echo "  wiki list              # See all indexed projects"
+    fi
 }
 
 cmd_config() {
@@ -225,6 +285,8 @@ main() {
         list|ls)   cmd_list "$@" ;;
         info)      cmd_info "$@" ;;
         prepare|context) cmd_prepare "$@" ;;
+        ask|query) cmd_ask "$@" ;;
+        server|api) cmd_server "$@" ;;
         health|check) cmd_health "$@" ;;
         fix)       cmd_fix "$@" ;;
         config)    cmd_config "$@" ;;
