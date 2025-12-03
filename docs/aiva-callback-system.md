@@ -314,8 +314,156 @@ firebase deploy --only functions:ghlCallbackTrigger,functions:aivaTwilioBridge,f
 firebase functions:log --only ghlCallbackTrigger -n 50 --project influential-digital-2025
 ```
 
+## Security Hardening
+
+### Twilio Webhook Signature Validation
+
+The `twilioCallStatus` webhook validates incoming requests using Twilio's signature verification:
+
+```typescript
+import { validateRequest } from 'twilio';
+
+const twilioSignature = req.headers['x-twilio-signature'];
+const url = 'https://us-central1-influential-digital-2025.cloudfunctions.net/twilioCallStatus';
+const isValid = validateRequest(TWILIO_AUTH_TOKEN, twilioSignature, url, req.body);
+
+if (!isValid) {
+  return res.status(403).send('Forbidden');
+}
+```
+
+This prevents attackers from sending fake webhook requests to trigger unwanted calls or incur costs.
+
+### Idempotency Protection
+
+The system uses Firestore document IDs to prevent duplicate processing:
+
+```typescript
+// Use CallSid + Status as document ID
+const eventRef = db.collection('call-status-events').doc(`${CallSid}-${CallStatus}`);
+const existingEvent = await eventRef.get();
+
+if (existingEvent.exists) {
+  // Already processed - return OK without duplicate action
+  return res.status(200).send('OK (duplicate)');
+}
+```
+
+This protects against:
+- Twilio webhook retries
+- Network-level duplicate requests
+- Race conditions in distributed systems
+
+### Structured Logging
+
+All functions use Firebase structured logging for observability:
+
+```typescript
+import { logger } from 'firebase-functions';
+
+logger.info({
+  message: 'SMS sent successfully',
+  sid: twilioMessageSid,
+  to: formattedPhone
+});
+```
+
+Log queries in Google Cloud Console:
+```
+resource.type="cloud_function"
+resource.labels.function_name="ghlCallbackTrigger"
+jsonPayload.message="Callback complete via SMS"
+```
+
+## Environment Configuration
+
+### Deprecation Notice
+
+> **ACTION REQUIRED BY MARCH 2026**
+>
+> The `functions.config()` API is deprecated. Firebase Cloud Functions must migrate to:
+> 1. Environment variables via `.env` files
+> 2. Firebase Secret Manager for sensitive values
+
+### Current Configuration (Legacy)
+
+```bash
+# View current config
+firebase functions:config:get --project influential-digital-2025
+
+# Set config values (deprecated method)
+firebase functions:config:set twilio.account_sid="ACxxx" twilio.auth_token="xxx"
+```
+
+### Migration to Secret Manager
+
+```bash
+# Set secrets (new method - recommended)
+firebase functions:secrets:set TWILIO_ACCOUNT_SID
+firebase functions:secrets:set TWILIO_AUTH_TOKEN
+firebase functions:secrets:set GHL_API_KEY
+firebase functions:secrets:set OPENROUTER_API_KEY
+
+# Reference in code: process.env.TWILIO_ACCOUNT_SID
+```
+
+### Environment File Template
+
+See `functions/.env.example` for required variables:
+
+```env
+OPENROUTER_API_KEY=sk-or-v1-xxx
+GHL_API_KEY=xxx
+GHL_LOCATION_ID=xxx
+TWILIO_ACCOUNT_SID=ACxxx
+TWILIO_AUTH_TOKEN=xxx
+TWILIO_PHONE_NUMBER=+61720004410
+```
+
+## Monitoring
+
+### View Function Logs
+
+```bash
+# All callback functions
+firebase functions:log --project influential-digital-2025
+
+# Specific function
+firebase functions:log --only ghlCallbackTrigger -n 100 --project influential-digital-2025
+
+# With timestamps
+firebase functions:log --only twilioCallStatus -n 50 --project influential-digital-2025 | head -100
+```
+
+### Key Metrics to Monitor
+
+| Metric | Normal Range | Alert Threshold |
+|--------|-------------|-----------------|
+| SMS Success Rate | >95% | <90% |
+| Call Completion Rate | >80% | <70% |
+| Response Time | <2s | >5s |
+| Error Rate | <2% | >5% |
+
+### Firestore Queries for Analytics
+
+```javascript
+// Recent callbacks
+db.collection('callback-requests')
+  .orderBy('createdAt', 'desc')
+  .limit(50)
+
+// Failed callbacks
+db.collection('callback-requests')
+  .where('status', '==', 'failed')
+  .orderBy('createdAt', 'desc')
+
+// Calls by method
+db.collection('callback-requests')
+  .where('method', '==', 'direct_call')
+```
+
 ---
 
-**Last Updated**: 2024-12-03
-**Version**: 2.0.0
+**Last Updated**: 2025-12-03
+**Version**: 2.2.0 (Production Hardened)
 **Author**: Claude Code
