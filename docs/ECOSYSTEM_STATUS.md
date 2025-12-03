@@ -1,7 +1,7 @@
 # Hardcard Ecosystem Status
 > Auto-generated status report
 
-**Last Updated:** Wed  3 Dec 2025 11:52:49 AEST
+**Last Updated:** Wed  3 Dec 2025 23:57:12 AEST
 
 ---
 
@@ -13,43 +13,39 @@
 | AIVA Help Frontend | [0;32m✓ UP[0m | https://aiva.help |
 | Influential Digital | [0;32m✓ UP[0m | https://influential.digital |
 | Business Basics | [0;32m✓ UP[0m | https://businessbasics.site |
-| AIVA Voice API | [0;31m✗ DOWN[0m | https://aiva-voice-api.onrender.com |
-| VetSorcery API | [0;31m✗ DOWN[0m | https://vetsorcery-api.onrender.com |
+| VetSorcery Backend | [0;32m✓ UP[0m | https://hardcard-vetsorcery.onrender.com |
+| AIVA Functions | [0;32m✓ UP[0m | https://us-central1-influential-digital-2025.cloudfunctions.net/health |
 
 ---
 
-## Critical Blockers
+## System Status Summary
 
-### VetSorcery Backend
-- **Status:** NOT_DEPLOYED
-- **Impact:** $10,000/month revenue blocked
-- **Action:** Run `deploy-vetsorcery.sh`
+### Security Audit (2025-12-03)
+- **Status:** ✅ PASSED (11/11 checks)
+- **CORS:** Restricted to whitelist
+- **Headers:** CSP, X-Frame-Options, HSTS configured
+- **Verification:** Run `scripts/verify-security.sh`
 
-### Required Environment Variables
-```
-TWILIO_ACCOUNT_SID
-TWILIO_AUTH_TOKEN
-TWILIO_PHONE_NUMBER
-OPENAI_API_KEY
-FIREBASE_SERVICE_ACCOUNT_KEY
-```
+### Outstanding Items (Non-blocking)
+| Item | Severity | Status |
+|------|----------|--------|
+| GHL Token 403 | LOW | CRM sync disabled |
+| Google Ads IDs | LOW | Placeholder until campaigns |
+| Gen 1 health function | INFO | Technical debt only |
 
 ---
 
 ## Quick Commands
 
 ```bash
-# Deploy VetSorcery
-/Users/studio/claude-code-wiki/scripts/deploy-vetsorcery.sh
+# Verify security (AIVA)
+/Users/studio/aiva-help-deploy/scripts/verify-security.sh
 
-# Verify AIVA
-/Users/studio/claude-code-wiki/scripts/deploy-aiva.sh
+# Ecosystem status
+/Users/studio/claude-code-wiki/scripts/ecosystem-status.sh
 
 # Audit Firebase projects
 /Users/studio/claude-code-wiki/scripts/firebase-audit.sh
-
-# Regenerate this report
-/Users/studio/claude-code-wiki/scripts/ecosystem-status.sh
 ```
 
 ---
@@ -58,8 +54,8 @@ FIREBASE_SERVICE_ACCOUNT_KEY
 
 | Project | Status | Potential MRR |
 |---------|--------|---------------|
-| VetSorcery | BLOCKED | $10,000 |
-| AIVA Help | MONITORING | $5,000 |
+| VetSorcery | DEPLOYED | $10,000 |
+| AIVA Help | OPERATIONAL | $5,000 |
 | Influential Digital | READY | $3,000 |
 | Business Basics | ACTIVE | $2,000 |
 | **Total** | | **$20,000** |

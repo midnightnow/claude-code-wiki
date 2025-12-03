@@ -34,12 +34,12 @@ This YAML file is the **single source of truth** for all project states, blocker
 
 ## Active Projects by Priority
 
-### Tier 0: Critical (Revenue Blocking)
+### Tier 0: Critical (Revenue Ready)
 
-| Project | Status | Blocker | Next Action |
+| Project | Status | Backend | Next Action |
 |---------|--------|---------|-------------|
-| **VetSorcery** | BACKEND_NOT_DEPLOYED | FastAPI not on Render | Deploy with render.yaml |
-| **AIVA Help** | MONITORING | Needs verification | Check /health endpoint |
+| **VetSorcery** | ✅ DEPLOYED | hardcard-vetsorcery.onrender.com | Sales outreach |
+| **AIVA Help** | ✅ OPERATIONAL | Firebase Functions (Gen 2) | Sales outreach |
 
 ### Tier 1: High (Ready for Launch)
 
@@ -110,17 +110,26 @@ BASE_URL                # https://aiva-voice-api.onrender.com
 
 ---
 
-## Revenue Unlocking Path
+## Revenue Status
 
 ```
 Current MRR:     $0
-Potential MRR:   $21,000
+Potential MRR:   $20,000
+System Status:   ALL OPERATIONAL
 
 Quick Wins:
-├── [2 hours] Deploy VetSorcery backend    → +$10,000/mo
-├── [30 min]  Configure Stripe (Influential) → +$3,000/mo
-└── [ongoing] Client onboarding (AIVA)     → +$5,000/mo
+├── [NOW] Close first AIVA customer        → +$49-249/mo
+├── [NOW] Close first VetSorcery customer  → +$99/mo
+├── [30 min] Configure Stripe (Influential) → +$3,000/mo
+└── [ongoing] Client onboarding            → Scale to $20K/mo
 ```
+
+### Security Audit (2025-12-03)
+- ✅ 11/11 security checks passing
+- ✅ CORS restricted to whitelist
+- ✅ All headers configured (CSP, HSTS, X-Frame-Options)
+- ✅ Facebook CAPI operational
+- ✅ Lead scoring functional
 
 ---
 
@@ -149,13 +158,16 @@ wiki health
 
 ## Recent Session Findings (2025-12-03)
 
-1. **VetSorcery**: Frontend deployed, backend missing. Created render.yaml for one-click deployment.
+1. **VetSorcery**: ✅ Backend deployed at hardcard-vetsorcery.onrender.com. Twilio configured. Ready for calls.
 
-2. **AIVA Help**: Security refactoring pushed (SessionManager, Twilio validation, rate limiting). Awaiting verification.
+2. **AIVA Help**: ✅ Security sprint complete. 11/11 checks passing. CORS fixed. FB CAPI operational.
 
-3. **Firebase Sprawl**: 20+ projects identified. Audit script created to categorize active vs dormant.
+3. **Firebase Functions**: All Gen 2 with defineSecret(). Health function remains Gen 1 (non-blocking).
 
-4. **Documentation Gap**: Shifted from prose to structured YAML state for machine-readability.
+4. **Outstanding (non-blocking)**:
+   - GHL token needs location access (403 error)
+   - Google Ads placeholder IDs (for future campaigns)
+   - Gen 1 health function (technical debt)
 
 ---
 

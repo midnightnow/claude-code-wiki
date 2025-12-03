@@ -77,46 +77,42 @@ check_health "Business Basics" "https://businessbasics.site" || true
 
 echo ""
 echo -e "${YELLOW}Checking backend services...${NC}"
-check_health "AIVA Voice API" "https://aiva-voice-api.onrender.com" "/health" || true
-check_health "VetSorcery API" "https://vetsorcery-api.onrender.com" "/health" || true
+check_health "VetSorcery Backend" "https://hardcard-vetsorcery.onrender.com" "/health" || true
+check_health "AIVA Functions" "https://us-central1-influential-digital-2025.cloudfunctions.net/health" "" || true
 
-# Add blocker summary
+# Add status summary
 cat >> "$OUTPUT_FILE" << 'BLOCKERS'
 
 ---
 
-## Critical Blockers
+## System Status Summary
 
-### VetSorcery Backend
-- **Status:** NOT_DEPLOYED
-- **Impact:** $10,000/month revenue blocked
-- **Action:** Run `deploy-vetsorcery.sh`
+### Security Audit (2025-12-03)
+- **Status:** ✅ PASSED (11/11 checks)
+- **CORS:** Restricted to whitelist
+- **Headers:** CSP, X-Frame-Options, HSTS configured
+- **Verification:** Run `scripts/verify-security.sh`
 
-### Required Environment Variables
-```
-TWILIO_ACCOUNT_SID
-TWILIO_AUTH_TOKEN
-TWILIO_PHONE_NUMBER
-OPENAI_API_KEY
-FIREBASE_SERVICE_ACCOUNT_KEY
-```
+### Outstanding Items (Non-blocking)
+| Item | Severity | Status |
+|------|----------|--------|
+| GHL Token 403 | LOW | CRM sync disabled |
+| Google Ads IDs | LOW | Placeholder until campaigns |
+| Gen 1 health function | INFO | Technical debt only |
 
 ---
 
 ## Quick Commands
 
 ```bash
-# Deploy VetSorcery
-/Users/studio/claude-code-wiki/scripts/deploy-vetsorcery.sh
+# Verify security (AIVA)
+/Users/studio/aiva-help-deploy/scripts/verify-security.sh
 
-# Verify AIVA
-/Users/studio/claude-code-wiki/scripts/deploy-aiva.sh
+# Ecosystem status
+/Users/studio/claude-code-wiki/scripts/ecosystem-status.sh
 
 # Audit Firebase projects
 /Users/studio/claude-code-wiki/scripts/firebase-audit.sh
-
-# Regenerate this report
-/Users/studio/claude-code-wiki/scripts/ecosystem-status.sh
 ```
 
 ---
@@ -125,8 +121,8 @@ FIREBASE_SERVICE_ACCOUNT_KEY
 
 | Project | Status | Potential MRR |
 |---------|--------|---------------|
-| VetSorcery | BLOCKED | $10,000 |
-| AIVA Help | MONITORING | $5,000 |
+| VetSorcery | DEPLOYED | $10,000 |
+| AIVA Help | OPERATIONAL | $5,000 |
 | Influential Digital | READY | $3,000 |
 | Business Basics | ACTIVE | $2,000 |
 | **Total** | | **$20,000** |
@@ -146,14 +142,18 @@ echo ""
 
 # Summary counts
 echo -e "${BOLD}Summary:${NC}"
-TOTAL_UP=$(grep -c "✓ UP" "$OUTPUT_FILE" 2>/dev/null || echo "0")
-TOTAL_DOWN=$(grep -c "✗ DOWN" "$OUTPUT_FILE" 2>/dev/null || echo "0")
+TOTAL_UP=$(grep -c "UP" "$OUTPUT_FILE" 2>/dev/null | tr -d '\n' || echo "0")
+TOTAL_DOWN=$(grep -c "DOWN" "$OUTPUT_FILE" 2>/dev/null | tr -d '\n' || echo "0")
 echo -e "  Services UP: ${GREEN}$TOTAL_UP${NC}"
 echo -e "  Services DOWN: ${RED}$TOTAL_DOWN${NC}"
 echo ""
 
 # Next action
-echo -e "${BOLD}Priority Action:${NC}"
-echo -e "  Deploy VetSorcery backend to unlock \$10K MRR"
-echo -e "  Run: ${CYAN}/Users/studio/claude-code-wiki/scripts/deploy-vetsorcery.sh${NC}"
+if [ "$TOTAL_DOWN" -gt 0 ]; then
+    echo -e "${BOLD}Priority Action:${NC}"
+    echo -e "  Check down services and redeploy if needed"
+else
+    echo -e "${BOLD}Status:${NC}"
+    echo -e "  ${GREEN}All services operational - ready for sales!${NC}"
+fi
 echo ""

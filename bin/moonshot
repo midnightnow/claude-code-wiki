@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+"""
+Moonshot Bio-Status - Active Enforcement Layer for Preferred Reality Framework
+Visualizes the metabolic state of your project's transformation.
+"""
+
+import os
+import sys
+import re
+
+def find_moonshot():
+    """Look for PREFERRED_REALITY.md in current and parent directories."""
+    path = os.getcwd()
+    while path != "/":
+        check = os.path.join(path, "PREFERRED_REALITY.md")
+        if os.path.exists(check):
+            return check
+        # Also check .claude subdirectory
+        check_claude = os.path.join(path, ".claude", "PREFERRED_REALITY.md")
+        if os.path.exists(check_claude):
+            return check_claude
+        path = os.path.dirname(path)
+    # Fallback to global
+    global_path = os.path.expanduser("~/.claude/PREFERRED_REALITY.md")
+    if os.path.exists(global_path):
+        return global_path
+    return None
+
+def parse_yaml_from_markdown(file_path):
+    """Extract YAML block from markdown file."""
+    with open(file_path, 'r') as f:
+        content = f.read()
+
+    # Find YAML block between ```yaml and ```
+    match = re.search(r'```yaml\n(.*?)\n```', content, re.DOTALL)
+    if not match:
+        return None
+
+    yaml_content = match.group(1)
+
+    # Simple YAML parser for our specific format
+    data = {}
+    current_key = None
+    current_value = []
+    indent_level = 0
+
+    for line in yaml_content.split('\n'):
+        if not line.strip() or line.strip().startswith('#'):
+            continue
+
+        # Extract key-value pairs
+        if ':' in line and not line.strip().startswith('-'):
+            parts = line.split(':', 1)
+            key = parts[0].strip()
+            value = parts[1].strip() if len(parts) > 1 else ''
+
+            # Handle multiline strings
+            if value.startswith('>'):
+                current_key = key
+                current_value = []
+            elif value.startswith('"') or value.startswith("'"):
+                data[key] = value.strip('"\'')
+            elif value:
+                data[key] = value
+            else:
+                data[key] = {}
+        elif current_key and line.strip():
+            current_value.append(line.strip())
+            data[current_key] = ' '.join(current_value)
+
+    return data
+
+def color(text, code):
+    """Apply ANSI color codes."""
+    return f"\033[{code}m{text}\033[0m"
+
+def render_header():
+    print()
+    print(color("╔═══════════════════════════════════════════════════════════════╗", "1;34"))
+    print(color("║           MOONSHOT BIO-STATUS DASHBOARD                       ║", "1;34"))
+    print(color("╚═══════════════════════════════════════════════════════════════╝", "1;34"))
+
+def render_status(file_path):
+    """Render the moonshot status from a PREFERRED_REALITY.md file."""
+    with open(file_path, 'r') as f:
+        content = f.read()
+
+    render_header()
+    print(f" {color('Source', '90')}: {file_path}")
+
+    # Extract key fields using regex
+    product = re.search(r'product:\s*"([^"]+)"', content)
+    tagline = re.search(r'tagline:\s*"([^"]+)"', content)
+    horizon = re.search(r'horizon:\s*"([^"]+)"', content)
+    # Look for transformation type specifically in transformation section
+    trans_section = re.search(r'transformation:\s*\n\s*type:\s*"([^"]+)"', content)
+    trans_type = trans_section if trans_section else re.search(r'^\s*type:\s*"([^"]+)"', content, re.MULTILINE)
+
+    # Display basic info
+    if product:
+        print(f"\n {color('PRODUCT', '1;37')}: {color(product.group(1).upper(), '1;36')}")
+    if tagline:
+        print(f" {color('TAGLINE', '1;37')}: \"{tagline.group(1)}\"")
+    if horizon:
+        print(f" {color('HORIZON', '1;37')}: {horizon.group(1)}")
+
+    # Transformation type with emoji
+    if trans_type:
+        t = trans_type.group(1).lower()
+        emoji_map = {
+            'metamorphosis': '🦋',
+            'gradual': '🐸',
+            'activation': '⚡',
+            'emergence': '🌐'
+        }
+        emoji = emoji_map.get(t, '🎯')
+        desc_map = {
+            'metamorphosis': 'Complete dissolution → reconstitution',
+            'gradual': 'Incremental capability addition',
+            'activation': 'Revealing latent potential',
+            'emergence': 'Network effects create new properties'
+        }
+        desc = desc_map.get(t, 'Unknown')
+
+        print(f"\n {color('TRANSFORMATION', '1;33')}")
+        print(f" {emoji} Type: {color(t.upper(), '1;36')}")
+        print(f"    {desc}")
+
+    # Extract current_form and target_form
+    current = re.search(r'current_form:\s*>\s*\n\s*(.*?)(?=\n\s*\w+:|$)', content, re.DOTALL)
+    target = re.search(r'target_form:\s*>\s*\n\s*(.*?)(?=\n\s*\w+:|$)', content, re.DOTALL)
+
+    if current:
+        form = ' '.join(current.group(1).strip().split())[:100]
+        print(f"\n {color('CURRENT STATE', '1;31')}")
+        print(f" {form}...")
+
+    if target:
+        form = ' '.join(target.group(1).strip().split())[:100]
+        print(f"\n {color('TARGET STATE', '1;32')}")
+        print(f" {form}...")
+
+    # Extract invariants
+    invariants = re.findall(r'invariants:\s*(?:\n\s*-\s*"([^"]+)")+', content)
+    if not invariants:
+        invariants = re.findall(r'-\s*"([^"]+)"', content[content.find('invariants:'):content.find('invariants:')+1000] if 'invariants:' in content else '')
+
+    # Simpler approach - find the invariants section
+    inv_match = re.search(r'invariants:\s*((?:\n\s*-\s*"[^"]+"\s*)+)', content)
+    if inv_match:
+        invariants = re.findall(r'-\s*"([^"]+)"', inv_match.group(1))
+
+    if invariants:
+        print(f"\n {color('DNA INVARIANTS (Immutable)', '1;35')}")
+        for inv in invariants[:5]:  # Show first 5
+            print(f" 🔒 {inv}")
+
+    # Extract key outcomes
+    outcomes = re.findall(r'outcome:\s*"([^"]+)"', content)
+    if outcomes:
+        print(f"\n {color('KEY OUTCOMES', '1;34')}")
+        for outcome in outcomes[:4]:  # Show first 4
+            print(f" ✓ {outcome}")
+
+    print()
+    print(color("─" * 65, "90"))
+    print()
+
+def render_ecosystem():
+    """Show status of all products in the ecosystem."""
+    render_header()
+    print(f" {color('ECOSYSTEM OVERVIEW', '1;33')}")
+
+    products = [
+        ("~/.claude/PREFERRED_REALITY.md", "GLOBAL", "🌍"),
+        ("~/aiva-help-deploy/PREFERRED_REALITY.md", "AIVA", "🐸"),
+        ("~/vetsorcery/PREFERRED_REALITY.md", "VetSorcery", "⚡"),
+        ("~/hardcard/PREFERRED_REALITY.md", "Hardcard", "🦋"),
+        ("~/influential-digital-site/PREFERRED_REALITY.md", "Influential", "🦋"),
+        ("~/openwake-mythos/PREFERRED_REALITY.md", "OpenWake", "🌐"),
+    ]
+
+    print()
+    for path, name, emoji in products:
+        full_path = os.path.expanduser(path)
+        exists = os.path.exists(full_path)
+        status = color("✓", "1;32") if exists else color("✗", "1;31")
+
+        # Get transformation type if exists
+        trans = ""
+        if exists:
+            with open(full_path, 'r') as f:
+                content = f.read()
+            match = re.search(r'type:\s*"([^"]+)"', content)
+            if match:
+                trans = f"[{match.group(1)}]"
+
+        print(f" {status} {emoji} {name:15} {trans}")
+
+    print()
+
+def main():
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '--all' or sys.argv[1] == '-a':
+            render_ecosystem()
+            return
+        elif sys.argv[1] == '--help' or sys.argv[1] == '-h':
+            print("moonshot - Preferred Reality Bio-Status Dashboard")
+            print()
+            print("Usage:")
+            print("  moonshot        Show status for current project")
+            print("  moonshot -a     Show ecosystem overview (all products)")
+            print("  moonshot -h     Show this help")
+            return
+
+    file_path = find_moonshot()
+    if not file_path:
+        print(color("No PREFERRED_REALITY.md found.", "1;31"))
+        print("Create one to define your project's transformation moonshot.")
+        sys.exit(1)
+
+    render_status(file_path)
+
+if __name__ == "__main__":
+    main()
