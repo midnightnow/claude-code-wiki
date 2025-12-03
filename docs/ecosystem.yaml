@@ -6,11 +6,12 @@
 # =============================================================================
 
 meta:
-  version: "1.0.0"
-  last_updated: "2025-12-03T10:00:00Z"
+  version: "1.1.0"
+  last_updated: "2025-12-03T16:55:00Z"
   owner: "studio"
-  total_projects: 5
+  total_projects: 7
   revenue_blocked: "$18,000/month"
+  notes: "Added Rhizo Sciences and Hempex per wiki documentation audit"
 
 # =============================================================================
 # TIER 0: CRITICAL - Revenue-blocking, deploy immediately
@@ -109,15 +110,23 @@ projects:
         - name: "trackEvent"
           status: "DEPLOYED"
           purpose: "Page views, scroll depth, CTA clicks"
+          url: "https://us-central1-influential-digital-2025.cloudfunctions.net/trackEvent"
+          verified: "2025-12-03"
         - name: "trackLead"
           status: "DEPLOYED"
           purpose: "Lead capture with scoring + story strategy"
+          url: "https://us-central1-influential-digital-2025.cloudfunctions.net/trackLead"
+          verified: "2025-12-03"
         - name: "getMarketingAnalytics"
           status: "DEPLOYED"
           purpose: "Admin dashboard data aggregation"
+          url: "https://us-central1-influential-digital-2025.cloudfunctions.net/getMarketingAnalytics"
+          verified: "2025-12-03"
         - name: "exportRetargetingAudience"
           status: "DEPLOYED"
           purpose: "FB/Google custom audience export"
+          url: "https://us-central1-influential-digital-2025.cloudfunctions.net/exportRetargetingAudience"
+          verified: "2025-12-03"
 
       lead_scoring:
         status: "ACTIVE"
@@ -195,6 +204,8 @@ projects:
 
     recent_changes:
       - date: "2025-12-03"
+        description: "Marketing functions verified live - all 4 endpoints responding correctly"
+      - date: "2025-12-03"
         description: "Email notifications fixed - dallas@rhizosciences.com with app password"
       - date: "2025-12-03"
         description: "Facebook CAPI fully operational - server-side conversion tracking"
@@ -205,7 +216,7 @@ projects:
       - date: "2025-12-03"
         description: "Lead scoring with grades A/B/C/D"
       - date: "2025-12-03"
-        description: "Marketing Intelligence functions deployed"
+        description: "Marketing Intelligence functions deployed to influential-digital-2025"
       - date: "2025-12-02"
         description: "FB Lead pixel fixed - now fires on form submit"
       - date: "2025-12-02"
@@ -296,6 +307,129 @@ projects:
       estimated_time: "ongoing"
 
 # =============================================================================
+# TIER 1.5: B2B OPPORTUNITIES - No code required, execution-ready
+# =============================================================================
+
+  rhizo_sciences:
+    tier: 1
+    status: "READY_TO_EXECUTE"
+    description: "B2B Tasmanian Hemp Protein Export to US Manufacturers"
+    revenue_potential: "$100,000/year"
+    revenue_model: "b2b_broker"
+
+    local_path: "/Users/studio/rhizo-sciences"
+
+    documentation:
+      status: "COMPLETE"
+      files:
+        - name: "EXECUTIVE_REPORT.md"
+          purpose: "Strategy overview and validation"
+          words: 5000
+        - name: "MARKET_INTELLIGENCE_REPORT.md"
+          purpose: "Full research - suppliers, buyers, logistics"
+          words: 16000
+        - name: "EMAIL_TEMPLATES.md"
+          purpose: "7 ready-to-send outreach emails"
+          templates: 7
+        - name: "QUICK_START_GUIDE.md"
+          purpose: "12-week execution playbook"
+          words: 8000
+
+    strategy:
+      approach: "Zero warehousing - pure arbitrage"
+      supplier_region: "Tasmania, Australia"
+      target_market: "US supplement manufacturers"
+      primary_supplier: "ECS Botanics (ASX-listed, Launceston)"
+
+    targets:
+      co_packers:
+        - name: "NutraPak USA"
+          location: "NJ"
+          fit: "FDA/NSF certified, natural products"
+        - name: "Vitalpax"
+          location: "UT"
+          fit: "Wellness-focused"
+        - name: "Whatever's Healthy"
+          location: "CA"
+          fit: "West Coast, lower freight"
+      brands:
+        - name: "ALOHA"
+          location: "CO"
+          fit: "B-Corp, perfect values alignment"
+        - name: "Sunwarrior"
+          location: "UT"
+          fit: "Already sells hemp protein"
+        - name: "Navitas Organics"
+          location: "CA"
+          fit: "Existing hemp product line"
+
+    financial_model:
+      container_capacity: "10,000 kg (20ft)"
+      margin_per_kg: "$2.00"
+      conservative: "$20,000/year (1 container)"
+      moderate: "$60,000/year (3 containers)"
+      optimistic: "$100,000/year (5 containers)"
+      working_capital_needed: "$20,000-$30,000"
+
+    execution_timeline:
+      week_1_2: "Supplier & freight qualification"
+      week_3_4: "US buyer outreach (top 5 targets)"
+      week_5_8: "Sample evaluation & negotiation"
+      week_9_12: "Close first purchase order"
+
+    blockers:
+      - id: "FOB_PRICING"
+        severity: "HIGH"
+        description: "Need Australian supplier FOB pricing before US outreach"
+        solution: "Send ECS Botanics email (template ready)"
+        status: "PENDING"
+      - id: "FREIGHT_QUOTES"
+        severity: "MEDIUM"
+        description: "Need 3 freight forwarder quotes"
+        solution: "RFQ template ready in EMAIL_TEMPLATES.md"
+        status: "PENDING"
+
+    next_action:
+      type: "OUTREACH"
+      description: "Send email to ECS Botanics requesting FOB pricing"
+      template: "/Users/studio/rhizo-sciences/EMAIL_TEMPLATES.md"
+      estimated_time: "15 minutes"
+      execution_week: "Week 3-4 of 30-day plan"
+
+  # ---------------------------------------------------------------------------
+  hempex:
+    tier: 3
+    status: "HIBERNATED"
+    description: "Hemp B2B Trading Marketplace"
+    revenue_potential: "$8,000/month"
+    revenue_model: "b2b_marketplace"
+
+    frontend:
+      status: "MINIMAL"
+      url: "https://hempex.com"
+      platform: "firebase-hosting"
+      project_id: "hempex-92344"
+      local_path: "/Users/studio/hempex-com-deploy"
+
+    notes: |
+      Part of HardCard DAO ecosystem concept.
+      Paused per 30-day cash plan - focus on Influential Digital + AIVA.
+      Revive after first consulting revenue achieved.
+      Related to Rhizo Sciences (same industry, different model).
+
+    blockers:
+      - id: "PAUSED"
+        severity: "LOW"
+        description: "Intentionally hibernated for focus"
+        solution: "Revive after Month 1 revenue target hit"
+        status: "ACCEPTED"
+
+    next_action:
+      type: "HIBERNATE"
+      description: "Keep domain active, no development"
+      estimated_time: "0"
+
+# =============================================================================
 # TIER 2: MEDIUM - Functional but needs optimization
 # =============================================================================
 
@@ -331,9 +465,12 @@ infrastructure:
       - name: "aiva-voice-api"
         status: "running"
         plan: "starter"
-      - name: "vetsorcery-api"
-        status: "not_deployed"
+        url: "https://aiva-voice-api.onrender.com"
+      - name: "hardcard-vetsorcery"
+        status: "running"
         plan: "starter"
+        url: "https://hardcard-vetsorcery.onrender.com"
+        verified: "2025-12-03"
 
   domains:
     - domain: "vetsorcery.com"
@@ -348,6 +485,10 @@ infrastructure:
     - domain: "businessbasics.site"
       status: "active"
       dns: "firebase"
+    - domain: "hempex.com"
+      status: "active"
+      dns: "firebase"
+      notes: "Hibernated - minimal landing page only"
 
 # =============================================================================
 # AUTOMATION SCRIPTS
@@ -377,6 +518,7 @@ scripts:
 revenue:
   current_mrr: "$0"
   potential_mrr: "$21,000"
+  potential_annual_b2b: "$100,000"  # Rhizo Sciences (not recurring)
   blocked_by:
     - project: "vetsorcery"
       amount: "$10,000"
@@ -390,6 +532,14 @@ revenue:
       amount: "$3,000"
       reason: "Needs Stripe live keys"
       status: "BLOCKED"
+    - project: "rhizo_sciences"
+      amount: "$100,000/year"
+      reason: "Need AU supplier FOB pricing before US outreach"
+      status: "PENDING_OUTREACH"
+    - project: "hempex"
+      amount: "$8,000/month"
+      reason: "Intentionally hibernated for focus"
+      status: "HIBERNATED"
 
   quick_wins:
     - action: "Close first AIVA customer"
