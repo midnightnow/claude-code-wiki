@@ -120,9 +120,13 @@ export class Reflector {
   /**
    * Primary entry point: Analyze a completed session and learn from it.
    * Called automatically when `wiki session end` runs.
+   * @param fixEntryId - Optional explicit journal entry ID that represents the fix (improves accuracy)
    */
-  public async reflectOnSession(sessionId: number): Promise<void> {
+  public async reflectOnSession(sessionId: number, fixEntryId?: number): Promise<void> {
     console.log(`\n🧠 Reflector: Analyzing session ${sessionId}...`);
+    if (fixEntryId) {
+      console.log(`   📍 Explicit fix tag provided: entry #${fixEntryId} (high confidence)`);
+    }
 
     const session = this.getSession(sessionId);
     if (!session) {
@@ -135,7 +139,7 @@ export class Reflector {
       return;
     }
 
-    const analysis = this.analyzeSession(sessionId);
+    const analysis = this.analyzeSession(sessionId, fixEntryId);
 
     // Log analysis results
     console.log(`   Success: ${analysis.success}`);
@@ -221,7 +225,7 @@ export class Reflector {
     ).get(sessionId) as DevSession | null;
   }
 
-  private analyzeSession(sessionId: number): SessionAnalysis {
+  private analyzeSession(sessionId: number, fixEntryId?: number): SessionAnalysis {
     const entries = this.db.prepare(
       'SELECT * FROM dev_journal WHERE session_id = ? ORDER BY timestamp ASC'
     ).all(sessionId) as JournalEntry[];
@@ -242,8 +246,8 @@ export class Reflector {
       }
     });
 
-    // Determine success
-    const success = !!successfulRun;
+    // Determine success (explicit fix tag also implies success)
+    const success = !!successfulRun || !!fixEntryId;
 
     // Find error signature
     const errorEntry = entries.find(e => e.entry_type === 'ERROR_LOG');
@@ -251,11 +255,25 @@ export class Reflector {
       ? generateErrorSignature(errorEntry.summary + ' ' + (errorEntry.details || ''))
       : undefined;
 
-    // Find winning hypothesis (last one before successful test)
+    // Find winning hypothesis
     let winningHypothesis: JournalEntry | undefined;
     let losingHypotheses: JournalEntry[] = [];
 
-    if (success && successfulRun) {
+    // EXPLICIT FIX TAG takes priority (high confidence ground truth)
+    if (fixEntryId) {
+      winningHypothesis = entries.find(e => e.id === fixEntryId);
+      if (!winningHypothesis) {
+        // Maybe it's not a hypothesis - could be any entry. Look it up directly.
+        winningHypothesis = this.db.prepare(
+          'SELECT * FROM dev_journal WHERE id = ?'
+        ).get(fixEntryId) as JournalEntry | undefined;
+      }
+
+      // All other hypotheses are "losing" (not the winning fix)
+      losingHypotheses = hypotheses.filter(h => h.id !== fixEntryId);
+
+    } else if (success && successfulRun) {
+      // TEMPORAL INFERENCE (lower confidence fallback)
       const successTime = new Date(successfulRun.timestamp).getTime();
 
       // Winning = last hypothesis before success

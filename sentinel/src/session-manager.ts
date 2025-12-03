@@ -135,25 +135,38 @@ export class SessionManager {
 
   /**
    * End the current session
+   * @param fixEntryId - Optional explicit tag of the journal entry that fixed the issue (improves learning accuracy)
    */
   endSession(
     sessionId: number,
     outcome: 'COMPLETED' | 'ABANDONED',
-    summary?: string
+    summary?: string,
+    fixEntryId?: number
   ): DevSession {
     const session = this.getSession(sessionId);
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
     }
 
-    // Update session
-    this.db.prepare(`
-      UPDATE dev_sessions
-      SET end_time = STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW'),
-          status = ?,
-          outcome_summary = ?
-      WHERE id = ?
-    `).run(outcome, summary || null, sessionId);
+    // Update session with explicit fix if provided
+    if (fixEntryId) {
+      this.db.prepare(`
+        UPDATE dev_sessions
+        SET end_time = STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW'),
+            status = ?,
+            outcome_summary = ?,
+            successful_hypothesis_id = ?
+        WHERE id = ?
+      `).run(outcome, summary || null, fixEntryId, sessionId);
+    } else {
+      this.db.prepare(`
+        UPDATE dev_sessions
+        SET end_time = STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW'),
+            status = ?,
+            outcome_summary = ?
+        WHERE id = ?
+      `).run(outcome, summary || null, sessionId);
+    }
 
     // Log session end
     this.addJournalEntry({
@@ -161,13 +174,13 @@ export class SessionManager {
       session_id: sessionId,
       entry_type: 'SESSION_END',
       summary: `Session ${outcome.toLowerCase()}: ${summary || 'No summary'}`,
-      details: JSON.stringify({ outcome, summary }),
+      details: JSON.stringify({ outcome, summary, fixEntryId }),
     });
 
     // Trigger reflection if completed
     if (outcome === 'COMPLETED') {
       console.log(`[SessionManager] Triggering reflection for session ${sessionId}...`);
-      this.reflector.reflectOnSession(sessionId);
+      this.reflector.reflectOnSession(sessionId, fixEntryId);
     }
 
     if (this.currentSessionId === sessionId) {

@@ -351,14 +351,20 @@ sessionCmd
   .description('End a development session')
   .option('-s, --summary <text>', 'Outcome summary')
   .option('-a, --abandoned', 'Mark as abandoned instead of completed')
+  .option('-f, --fix <entryId>', 'Explicitly tag the journal entry that fixed the issue (improves learning accuracy)')
   .action((id, options) => {
     const sessionManager = new SessionManager();
 
     const outcome = options.abandoned ? 'ABANDONED' : 'COMPLETED';
-    const session = sessionManager.endSession(parseInt(id), outcome, options.summary);
+    const fixEntryId = options.fix ? parseInt(options.fix) : undefined;
+
+    const session = sessionManager.endSession(parseInt(id), outcome, options.summary, fixEntryId);
 
     console.log(`[Sentinel] Session ${id} ended`);
     console.log(`  Status: ${session.status}`);
+    if (fixEntryId) {
+      console.log(`  Fix Entry: #${fixEntryId} (explicit tag - high confidence)`);
+    }
     if (session.winning_strategy) {
       console.log(`  Winning Strategy: ${session.winning_strategy}`);
     }
