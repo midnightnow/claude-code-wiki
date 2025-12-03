@@ -39,6 +39,15 @@ ${BOLD}COMMANDS${NC}
     ${GREEN}update${NC}            Update to latest version
     ${GREEN}uninstall${NC}         Remove Claude Code Wiki
 
+${BOLD}JOURNAL COMMANDS${NC} (Self-Improving Dev Journal)
+    ${GREEN}session${NC} start|end|list|show   Manage development sessions
+    ${GREEN}journal${NC}           Show recent journal entries
+    ${GREEN}tests${NC} watch|process|flaky     Test result management
+    ${GREEN}stats${NC}             Show journal statistics
+    ${GREEN}reflect${NC}           Run session reflection analysis
+    ${GREEN}playbooks${NC}         Show troubleshooting playbooks
+    ${GREEN}note${NC} <message>    Add a quick note to journal
+
 ${BOLD}CI/CD COMMANDS${NC}
     ${GREEN}cicd run${NC}          Run full CI/CD documentation pipeline
     ${GREEN}cicd diff${NC} [ref]   Show changed files since reference
@@ -218,6 +227,11 @@ cmd_hooks() {
     wiki_hooks "$@"
 }
 
+cmd_journal() {
+    source "$WIKI_HOME/lib/journal.sh"
+    wiki_journal_cmd "$@"
+}
+
 cmd_uninstall() {
     wiki_print_header "Uninstalling Claude Code Wiki"
 
@@ -311,6 +325,9 @@ main() {
         uninstall) cmd_uninstall "$@" ;;
         cicd)      cmd_cicd "$@" ;;
         hooks)     cmd_hooks "$@" ;;
+        # Journal commands - delegate to sentinel
+        session|journal|tests|stats|reflect|playbooks|note|quick)
+            cmd_journal "$cmd" "$@" ;;
         help)      show_help ;;
         *)
             wiki_error "Unknown command: $cmd"

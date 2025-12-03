@@ -54,12 +54,17 @@ export interface Proposal {
 }
 
 export class WikiDatabase {
-  private db: Database.Database;
+  public readonly db: Database.Database;  // Exposed for Reflector access
   private wikiDir: string;
+  private dataDir: string;
 
   constructor() {
     this.wikiDir = join(homedir(), 'claude-code-wiki');
-    const dbPath = join(this.wikiDir, 'wiki.db');
+    // Wiki stores data in XDG_DATA_HOME (~/.local/share/claude-wiki)
+    this.dataDir = process.env.XDG_DATA_HOME
+      ? join(process.env.XDG_DATA_HOME, 'claude-wiki')
+      : join(homedir(), '.local', 'share', 'claude-wiki');
+    const dbPath = join(this.dataDir, 'wiki.db');
 
     if (!existsSync(dbPath)) {
       throw new Error(`Wiki database not found at ${dbPath}. Run 'wiki scan' first.`);
