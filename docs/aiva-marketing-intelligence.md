@@ -192,7 +192,12 @@ window.AIVATracker = {
 
 **Method**: POST
 
-**Secrets Required**: `EMAIL_USER`, `EMAIL_PASS`, `FB_ACCESS_TOKEN`
+**Secrets Required**:
+- `EMAIL_USER` = `dallas@rhizosciences.com` (v2)
+- `EMAIL_PASS` = App password 'aiva' (v4)
+- `FB_ACCESS_TOKEN` = Meta CAPI token (v2)
+
+See `/docs/google-workspace-infrastructure.md` for email configuration details.
 
 **Request Body**:
 ```json

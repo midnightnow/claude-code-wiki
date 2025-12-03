@@ -157,7 +157,37 @@ projects:
       functions: ["ghlCallbackTrigger", "aivaTwilioBridge", "twilioCallStatus"]
       ghl_number: "+61 468 080 000"
 
+    # Email Notification System - OPERATIONAL
+    email:
+      status: "OPERATIONAL"
+      provider: "gmail_smtp"
+      configuration:
+        email_user: "dallas@rhizosciences.com"
+        email_pass: "App password 'aiva' from rhizosciences.com Workspace"
+        smtp_service: "gmail"
+      notes: |
+        Google Workspace domain structure:
+        - Primary domain: rhizosciences.com
+        - Alias domains: aiva.help, hempex.com, vetsorcery.com, hardcard.ai,
+          hardcard.app, hardcard.org, hardcard.world, macagent.pro,
+          rhizosciences.co, rhizosciences.com.au
+        - App passwords must be generated from dallas@rhizosciences.com account
+        - All emails send FROM dallas@rhizosciences.com
+      firebase_secrets:
+        - name: "EMAIL_USER"
+          value: "dallas@rhizosciences.com"
+          version: 2
+        - name: "EMAIL_PASS"
+          value: "[App Password 'aiva']"
+          version: 4
+      functions_using_email:
+        - "trackLead"
+        - "stripeWebhook"
+        - "submitSetup"
+
     recent_changes:
+      - date: "2025-12-03"
+        description: "Email notifications fixed - dallas@rhizosciences.com with app password"
       - date: "2025-12-03"
         description: "Facebook CAPI fully operational - server-side conversion tracking"
       - date: "2025-12-03"
@@ -193,9 +223,10 @@ projects:
       - "callback-requests"
 
     next_action:
-      type: "CONFIGURE"
-      description: "Complete Stape CAPI Gateway setup for FB conversion tracking"
-      estimated_time: "10 minutes"
+      type: "SALES"
+      description: "Close first paying customer - system is 100% operational"
+      estimated_time: "1 call + 15 min GHL setup"
+      notes: "All marketing intelligence systems operational. Ready for revenue."
 
 # =============================================================================
 # TIER 1: HIGH - Ready for launch, minor blockers
@@ -370,4 +401,5 @@ revenue:
     clarity_heatmaps: "OPERATIONAL"
     admin_dashboard: "OPERATIONAL"
     stripe_payments: "OPERATIONAL"
+    email_notifications: "OPERATIONAL"  # Fixed 2025-12-03 - dallas@rhizosciences.com
     ghl_automation: "MANUAL"
