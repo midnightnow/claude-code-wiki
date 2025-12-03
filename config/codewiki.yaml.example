@@ -1,0 +1,185 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#  CODEWIKI.YAML - Project Configuration for Auto-Documentation
+#  Place this file at the root of your project to enable CI/CD wiki updates
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Version of the config format
+version: "1.0"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Trigger Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+triggers:
+  # Branches that trigger wiki updates on push
+  on_push_to:
+    - main
+    - develop
+    - "release/*"
+
+  # Enable/disable different trigger types
+  on_pull_request: true
+  on_tag: true
+  on_schedule: "0 2 * * *"  # Daily at 2 AM (cron format, or false to disable)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Scope Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+scope:
+  # Directories to include (glob patterns)
+  include:
+    - "src/**/*"
+    - "lib/**/*"
+    - "app/**/*"
+    - "packages/**/*"
+    - "functions/**/*"
+
+  # Directories/files to exclude
+  exclude:
+    - "node_modules/**"
+    - "dist/**"
+    - "build/**"
+    - ".git/**"
+    - "*.min.js"
+    - "*.map"
+    - "coverage/**"
+    - "__pycache__/**"
+    - ".venv/**"
+
+  # File types to analyze (by extension)
+  file_types:
+    - ts
+    - tsx
+    - js
+    - jsx
+    - py
+    - go
+    - rs
+    - java
+    - md
+    - yaml
+    - json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Generation Recipes
+# ─────────────────────────────────────────────────────────────────────────────
+recipes:
+  # Generate context manifest for AI analysis
+  - name: context_manifest
+    type: context
+    output: "GEMINI_CONTEXT.md"
+    include_structure: true
+    include_configs: true
+    include_entry_points: true
+    include_types: true
+    max_tokens: 50000
+
+  # Generate component documentation
+  - name: components
+    type: docs
+    source: "src/components/**/*.tsx"
+    output: "docs/components/"
+    template: component_doc
+    per_file: true
+
+  # Generate API documentation
+  - name: api_docs
+    type: docs
+    source: "src/api/**/*"
+    output: "docs/api/"
+    template: api_doc
+    per_file: true
+
+  # Generate README updates
+  - name: readme
+    type: summary
+    output: "README.md"
+    sections:
+      - quick_start
+      - structure
+      - scripts
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dependency Tracking
+# ─────────────────────────────────────────────────────────────────────────────
+dependencies:
+  # Enable dependency graph building
+  enabled: true
+
+  # Update dependents when a file changes
+  cascade_updates: true
+
+  # Maximum cascade depth (prevents infinite loops)
+  max_depth: 3
+
+  # Languages to track imports for
+  languages:
+    - typescript
+    - javascript
+    - python
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Output Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+output:
+  # Where to write generated docs
+  directory: "docs/generated"
+
+  # How to handle generated docs
+  commit_docs: true
+  commit_message: "docs: auto-update wiki documentation [skip ci]"
+  commit_author: "Wiki Bot <wiki@codewiki.dev>"
+
+  # Branch for docs (null = same branch)
+  docs_branch: null
+
+  # Create PR instead of direct commit
+  create_pr: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Model Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+model:
+  # Primary model for generation
+  provider: "gemini"
+  model: "gemini-2.5-pro"
+
+  # Fallback model
+  fallback:
+    provider: "openai"
+    model: "gpt-4o"
+
+  # Generation parameters
+  temperature: 0.3
+  max_output_tokens: 4096
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Notifications
+# ─────────────────────────────────────────────────────────────────────────────
+notifications:
+  # Slack webhook for updates
+  slack_webhook: "${SLACK_WIKI_WEBHOOK}"
+
+  # Notify on these events
+  on_success: false
+  on_failure: true
+  on_changes: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Advanced Options
+# ─────────────────────────────────────────────────────────────────────────────
+advanced:
+  # Enable incremental updates (only changed files)
+  incremental: true
+
+  # Cache analysis results
+  cache_enabled: true
+  cache_ttl: 86400  # 24 hours
+
+  # Parallel processing
+  parallel_jobs: 4
+
+  # Debug mode
+  debug: false
+
+  # Dry run (no actual changes)
+  dry_run: false

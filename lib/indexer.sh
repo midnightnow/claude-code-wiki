@@ -16,15 +16,17 @@ wiki_index_project() {
     local name=$(basename "$dir")
     local type=$(wiki_detect_project_type "$dir")
     local lang=$(wiki_detect_language "$dir")
-    local has_context=$([[ -f "$dir/GEMINI.md" || -f "$dir/GEMINI_CONTEXT.md" ]] && echo 1 || echo 0)
+    local has_context=$([[ -f "$dir/GEMINI.md" || -f "$dir/GEMINI_CONTEXT.md" || -f "$dir/_AI_CONTEXT.md" ]] && echo 1 || echo 0)
 
-    # Count source files
-    local file_count=$(find "$dir" -maxdepth 4 -type f \( \
+    # Exclusion patterns - comprehensive list
+    local EXCLUDE_PATTERN='node_modules|\.git/|/dist/|/build/|\.next/|__pycache__|\.venv/|/vendor/|/coverage/|\.cache|bower_components'
+
+    # Count source files with robust exclusion (pipe through grep -v)
+    local file_count=$(find "$dir" -maxdepth 5 -type f \( \
         -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \
         -o -name "*.py" -o -name "*.go" -o -name "*.rs" \
         -o -name "*.json" -o -name "*.md" -o -name "*.yaml" -o -name "*.yml" \
-    \) ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/dist/*" \
-       ! -path "*/.next/*" ! -path "*/__pycache__/*" 2>/dev/null | wc -l | tr -d ' ')
+    \) 2>/dev/null | grep -Ev "$EXCLUDE_PATTERN" | wc -l | tr -d ' ')
 
     # Skip if too few files
     [[ $file_count -lt 3 ]] && return 1
@@ -42,13 +44,12 @@ wiki_index_project() {
     # Clear old files for this project
     wiki_db_query "DELETE FROM files WHERE project_id=$project_id;"
 
-    # Index important files
-    find "$dir" -maxdepth 4 -type f \( \
+    # Index important files with robust exclusion
+    find "$dir" -maxdepth 5 -type f \( \
         -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \
         -o -name "*.py" -o -name "*.go" -o -name "*.rs" \
         -o -name "*.json" -o -name "*.md" -o -name "*.yaml" -o -name "*.yml" \
-    \) ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/dist/*" \
-       ! -path "*/.next/*" ! -path "*/__pycache__/*" 2>/dev/null | while read -r file; do
+    \) 2>/dev/null | grep -Ev "$EXCLUDE_PATTERN" | while read -r file; do
         local filename=$(basename "$file")
         local ext="${filename##*.}"
         local size=$(wiki_file_size "$file")
@@ -123,6 +124,63 @@ wiki_scan() {
     echo -e "  Total files: ${CYAN}$total_files${NC}"
     echo -e "  New this scan: ${GREEN}$count${NC}"
     [[ $skipped -gt 0 ]] && echo -e "  Skipped (too small): ${YELLOW}$skipped${NC}"
+
+    # Auto-generate context for high-priority projects without context
+    if [[ "${WIKI_AUTO_CONTEXT:-true}" == "true" ]]; then
+        wiki_auto_generate_context
+    fi
+}
+
+#───────────────────────────────────────────────────────────────────────────────
+# Auto-generate context for priority projects
+#───────────────────────────────────────────────────────────────────────────────
+
+wiki_auto_generate_context() {
+    # Find top projects by file count that lack context
+    local projects_needing_context=$(wiki_db_query "
+        SELECT path FROM projects
+        WHERE has_context = 0
+        AND file_count > 100
+        ORDER BY file_count DESC
+        LIMIT 5;
+    ")
+
+    if [[ -z "$projects_needing_context" ]]; then
+        wiki_info "All major projects have context files"
+        return 0
+    fi
+
+    echo ""
+    wiki_print_section "Auto-Generating Context"
+    wiki_info "Generating context for top projects without GEMINI_CONTEXT.md..."
+
+    # Source context module if not loaded
+    local context_lib="$(dirname "${BASH_SOURCE[0]}")/context.sh"
+    [[ -f "$context_lib" ]] && source "$context_lib"
+
+    local generated=0
+    while IFS= read -r project_path; do
+        [[ -z "$project_path" ]] && continue
+        local project_name=$(basename "$project_path")
+
+        # Skip if context already exists (double-check)
+        if [[ -f "$project_path/GEMINI_CONTEXT.md" || -f "$project_path/_AI_CONTEXT.md" ]]; then
+            wiki_db_query "UPDATE projects SET has_context = 1 WHERE path = '$project_path';"
+            continue
+        fi
+
+        echo -e "  ${CYAN}►${NC} Generating context for $project_name..."
+
+        # Generate context (suppress verbose output)
+        if wiki_generate_context "$project_path" >/dev/null 2>&1; then
+            echo -e "    ${GREEN}✓${NC} Created GEMINI_CONTEXT.md"
+            ((generated++))
+        else
+            echo -e "    ${YELLOW}⚠${NC} Failed to generate context"
+        fi
+    done <<< "$projects_needing_context"
+
+    [[ $generated -gt 0 ]] && wiki_info "Generated context for $generated projects"
 }
 
 #───────────────────────────────────────────────────────────────────────────────

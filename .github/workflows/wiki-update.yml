@@ -1,0 +1,215 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Claude Code Wiki - GitHub Action
+#  Automatically updates documentation on push to configured branches
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Wiki Auto-Update
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/*'
+    paths-ignore:
+      - 'docs/generated/**'
+      - '*.md'
+      - '.github/**'
+
+  pull_request:
+    branches:
+      - main
+      - develop
+    types: [opened, synchronize]
+
+  workflow_dispatch:
+    inputs:
+      full_rebuild:
+        description: 'Force full documentation rebuild'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Prevent concurrent runs on same ref
+concurrency:
+  group: wiki-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wiki-update:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+
+    # Only run if codewiki.yaml exists
+    if: hashFiles('codewiki.yaml', '.codewiki.yaml') != ''
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      # ─────────────────────────────────────────────────────────────────────────
+      # Setup
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for diff analysis
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml jinja2
+
+      - name: Install Claude Code Wiki
+        run: |
+          # Clone wiki tool
+          git clone --depth 1 https://github.com/patrickdellis/claude-code-wiki.git /tmp/wiki-tool
+
+          # Add to PATH
+          echo "/tmp/wiki-tool/bin" >> $GITHUB_PATH
+
+          # Make executable
+          chmod +x /tmp/wiki-tool/bin/wiki
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Analysis
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - name: Analyze changes
+        id: analyze
+        run: |
+          # Determine base ref for comparison
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+          fi
+
+          # Handle first push (no previous commit)
+          if [[ "$BASE_REF" == "0000000000000000000000000000000000000000" ]]; then
+            BASE_REF="HEAD~1"
+          fi
+
+          echo "base_ref=$BASE_REF" >> $GITHUB_OUTPUT
+
+          # Get changed files
+          CHANGED=$(git diff --name-only "$BASE_REF" HEAD 2>/dev/null || echo "")
+          CHANGED_COUNT=$(echo "$CHANGED" | grep -c . || echo "0")
+
+          echo "changed_count=$CHANGED_COUNT" >> $GITHUB_OUTPUT
+
+          # Check for relevant changes
+          RELEVANT=$(echo "$CHANGED" | grep -E '\.(ts|tsx|js|jsx|py|go|rs|java)$' | head -20 || echo "")
+          RELEVANT_COUNT=$(echo "$RELEVANT" | grep -c . || echo "0")
+
+          echo "relevant_count=$RELEVANT_COUNT" >> $GITHUB_OUTPUT
+          echo "relevant_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEVANT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # Summary
+          echo "### Change Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "- Total files changed: $CHANGED_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- Relevant source files: $RELEVANT_COUNT" >> $GITHUB_STEP_SUMMARY
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Documentation Generation
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - name: Generate documentation
+        if: steps.analyze.outputs.relevant_count > 0 || github.event.inputs.full_rebuild == 'true'
+        run: |
+          echo "Generating documentation..."
+
+          # Create output directory
+          mkdir -p docs/generated
+
+          # Run wiki cicd pipeline
+          wiki cicd run "${{ steps.analyze.outputs.base_ref }}" 2>&1 || true
+
+          # Show what was generated
+          if [[ -d "docs/generated" ]]; then
+            echo "Generated files:"
+            ls -la docs/generated/
+          fi
+
+      - name: Generate context manifest
+        if: github.event.inputs.full_rebuild == 'true'
+        run: |
+          echo "Generating full context manifest..."
+          wiki prepare . --output GEMINI_CONTEXT.md || true
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Commit & Push
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if [[ -n "$(git status --porcelain docs/generated/ GEMINI_CONTEXT.md 2>/dev/null)" ]]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit documentation
+        if: steps.changes.outputs.has_changes == 'true' && github.event_name != 'pull_request'
+        run: |
+          git config user.name "Wiki Bot"
+          git config user.email "wiki@codewiki.dev"
+
+          git add docs/generated/ GEMINI_CONTEXT.md 2>/dev/null || true
+
+          git commit -m "docs: auto-update wiki documentation [skip ci]" \
+            -m "🤖 Generated with Claude Code Wiki" \
+            -m "Triggered by: ${{ github.event_name }}" \
+            -m "Commit: ${{ github.sha }}"
+
+          git push
+
+      - name: Comment on PR
+        if: steps.changes.outputs.has_changes == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📚 Documentation Preview
+
+            This PR includes changes to source files that affect documentation.
+
+            **Changed files:** ${{ steps.analyze.outputs.relevant_count }}
+
+            The documentation will be auto-generated when this PR is merged.
+
+            ---
+            *🤖 Generated by Claude Code Wiki*`
+            })
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Summary
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - name: Job Summary
+        run: |
+          echo "### Wiki Update Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ steps.changes.outputs.has_changes }}" == "true" ]]; then
+            echo "✅ Documentation updated successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ No documentation changes needed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*🤖 Claude Code Wiki*" >> $GITHUB_STEP_SUMMARY

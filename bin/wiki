@@ -39,6 +39,13 @@ ${BOLD}COMMANDS${NC}
     ${GREEN}update${NC}            Update to latest version
     ${GREEN}uninstall${NC}         Remove Claude Code Wiki
 
+${BOLD}CI/CD COMMANDS${NC}
+    ${GREEN}cicd run${NC}          Run full CI/CD documentation pipeline
+    ${GREEN}cicd diff${NC} [ref]   Show changed files since reference
+    ${GREEN}cicd generate${NC}     Generate docs for specific files
+    ${GREEN}cicd commit${NC}       Commit generated documentation
+    ${GREEN}hooks install${NC}     Install git hooks for auto-update
+
 ${BOLD}OPTIONS${NC}
     -h, --help        Show this help message
     -v, --version     Show version
@@ -201,6 +208,16 @@ cmd_update() {
     fi
 }
 
+cmd_cicd() {
+    source "$WIKI_HOME/lib/cicd.sh"
+    cmd_cicd "$@"
+}
+
+cmd_hooks() {
+    source "$WIKI_HOME/lib/hooks.sh"
+    wiki_hooks "$@"
+}
+
 cmd_uninstall() {
     wiki_print_header "Uninstalling Claude Code Wiki"
 
@@ -292,6 +309,8 @@ main() {
         config)    cmd_config "$@" ;;
         update)    cmd_update "$@" ;;
         uninstall) cmd_uninstall "$@" ;;
+        cicd)      cmd_cicd "$@" ;;
+        hooks)     cmd_hooks "$@" ;;
         help)      show_help ;;
         *)
             wiki_error "Unknown command: $cmd"

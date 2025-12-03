@@ -659,12 +659,34 @@ firebase functions:log --only trackLead -n 50 --project influential-digital-2025
 - [x] Admin Dashboard Marketing tab
 
 ### Pending
-- [ ] Facebook CAPI token (user action required)
-- [ ] Automated email sequences (GHL integration)
+- [ ] GHL Location Access - Token needs permission for location Px7kCAZIXCP2Kk8vs7IO
+- [ ] Google Ads Conversion IDs - Replace `AW-CONVERSION_ID` placeholders in analytics.js and vets.html
 - [ ] A/B test variants
+
+### Completed (2025-12-03) - Security Sprint
+- [x] Facebook CAPI token configured and operational (events_received: 1)
+- [x] CORS restricted to allowed origins only (aiva.help, aiva-help.web.app, localhost:5000)
+- [x] CSP headers updated for Clarity.ms heatmaps
+- [x] Email FROM headers aligned to dallas@rhizosciences.com (SPF/DKIM compliant)
+- [x] Admin API authentication fixed (defineSecret().value() for Gen 2)
+- [x] Stripe webhook secret rotated and secured
+- [x] GHL credentials configured (awaiting location access)
+- [x] Twilio/Voice API placeholders set for VetSorcery
+
+### Security Audit Summary
+| Item | Status | Notes |
+|------|--------|-------|
+| CORS | ✅ Fixed | Restricted to whitelist |
+| CSP | ✅ Fixed | clarity.ms added |
+| Email FROM | ✅ Fixed | dallas@rhizosciences.com |
+| Admin Auth | ✅ Fixed | Token working |
+| Secrets | ✅ Fixed | All in Firebase Secret Manager |
+| FB CAPI | ✅ Working | Confirmed in logs |
+| GHL Sync | ⚠️ Pending | 403 location access error |
+| Google Ads | ⚠️ Pending | Placeholder IDs |
 
 ---
 
 **Last Updated**: 2025-12-03
-**Version**: 1.0.0
+**Security Sprint Version**: 1.1.0
 **Author**: Claude Code

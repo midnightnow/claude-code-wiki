@@ -299,6 +299,102 @@ wiki_release_lock() {
 }
 
 #───────────────────────────────────────────────────────────────────────────────
+# Exclusion Pattern Functions (.gitignore-style support)
+#───────────────────────────────────────────────────────────────────────────────
+
+# Global exclusion patterns (always exclude these)
+WIKI_GLOBAL_EXCLUDES=(
+    'node_modules'
+    '.git'
+    'dist'
+    'build'
+    '.next'
+    '__pycache__'
+    '.venv'
+    'venv'
+    '.env'
+    'vendor'
+    'coverage'
+    '.cache'
+    'bower_components'
+    '.tox'
+    '.pytest_cache'
+    '.mypy_cache'
+    '.ruff_cache'
+    '*.egg-info'
+    '.eggs'
+    'target'           # Rust/Maven
+    '.cargo'
+    '.gradle'
+    '.idea'
+    '.vscode'
+    '*.min.js'
+    '*.bundle.js'
+)
+
+# Convert global excludes to grep pattern
+wiki_get_exclude_pattern() {
+    local pattern=""
+    for excl in "${WIKI_GLOBAL_EXCLUDES[@]}"; do
+        if [[ -n "$pattern" ]]; then
+            pattern+="|"
+        fi
+        # Escape special chars and handle wildcards
+        local escaped="${excl//\./\\.}"
+        escaped="${escaped//\*/.*}"
+        pattern+="$escaped"
+    done
+    echo "$pattern"
+}
+
+# Read .gitignore and convert to exclusion patterns
+wiki_read_gitignore() {
+    local dir="$1"
+    local gitignore="$dir/.gitignore"
+    local patterns=()
+
+    if [[ -f "$gitignore" ]]; then
+        while IFS= read -r line; do
+            # Skip comments and empty lines
+            [[ -z "$line" || "$line" =~ ^# ]] && continue
+            # Remove leading/trailing whitespace
+            line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            [[ -z "$line" ]] && continue
+            # Convert to regex pattern (basic conversion)
+            local pattern="${line//\./\\.}"
+            pattern="${pattern//\*/.*}"
+            pattern="${pattern//\?/.}"
+            patterns+=("$pattern")
+        done < "$gitignore"
+    fi
+
+    # Return patterns joined by |
+    printf '%s\n' "${patterns[@]}" | paste -sd '|' -
+}
+
+# Check if path should be excluded
+wiki_should_exclude() {
+    local path="$1"
+    local dir="$2"
+
+    # Check global excludes first (fast path)
+    local global_pattern=$(wiki_get_exclude_pattern)
+    if echo "$path" | grep -Eq "$global_pattern" 2>/dev/null; then
+        return 0  # Should exclude
+    fi
+
+    # Check project .gitignore if exists
+    if [[ -f "$dir/.gitignore" ]]; then
+        local gitignore_pattern=$(wiki_read_gitignore "$dir")
+        if [[ -n "$gitignore_pattern" ]] && echo "$path" | grep -Eq "$gitignore_pattern" 2>/dev/null; then
+            return 0  # Should exclude
+        fi
+    fi
+
+    return 1  # Don't exclude
+}
+
+#───────────────────────────────────────────────────────────────────────────────
 # Utility Functions
 #───────────────────────────────────────────────────────────────────────────────
 
