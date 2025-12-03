@@ -18,7 +18,7 @@ meta:
 projects:
   vetsorcery:
     tier: 0
-    status: "ACTION_REQUIRED"
+    status: "DEPLOYED"
     description: "AI Phone Agent for Veterinary Clinics"
     revenue_potential: "$10,000/month"
 
@@ -29,32 +29,40 @@ projects:
       project_id: "vetsorcery"
 
     backend:
-      status: "NOT_DEPLOYED"
+      status: "DEPLOYED"
+      url: "https://hardcard-vetsorcery.onrender.com"
       local_path: "/Users/studio/vetsorcery"
-      deployment_target: "render.com"
-      config_file: "render.yaml"
+      platform: "render.com"
+      service_id: "srv-d4nqjdc9c44c73d3nh30"
       entry_point: "main_production:app"
       port: 8000
       health_check: "/health"
+      deployed_at: "2025-12-03"
+
+    twilio:
+      status: "CONFIGURED"
+      webhook_url: "https://hardcard-vetsorcery.onrender.com/api/v1/phone/twilio/incoming_call"
+      numbers:
+        - phone: "+61720004410"
+          region: "AU"
+          sid: "PNd0e3c54ce1c8daf7df26b79ba152ed45"
+        - phone: "+13512009935"
+          region: "US"
+          sid: "PN023051212fe55d94dbb69045be732b2b"
 
     blockers:
-      - id: "BACKEND_NOT_DEPLOYED"
-        severity: "CRITICAL"
-        description: "FastAPI backend not deployed to production"
-        solution: "Deploy using render.yaml"
-      - id: "TWILIO_NOT_CONFIGURED"
-        severity: "CRITICAL"
-        description: "No Twilio phone number with webhook"
-        solution: "Buy number, configure webhook to backend URL"
-      - id: "ENV_VARS_MISSING"
-        severity: "HIGH"
-        description: "Production secrets not set"
-        required_vars:
-          - "TWILIO_ACCOUNT_SID"
-          - "TWILIO_AUTH_TOKEN"
-          - "TWILIO_PHONE_NUMBER"
-          - "OPENAI_API_KEY"
-          - "FIREBASE_SERVICE_ACCOUNT_KEY"
+      - id: "CORS_WILDCARD"
+        severity: "MEDIUM"
+        description: "CORS set to allow all origins"
+        solution: "Restrict to vetsorcery.com only"
+      - id: "RATE_LIMITING"
+        severity: "MEDIUM"
+        description: "No rate limiting on webhook"
+        solution: "Add slowapi rate limiting"
+      - id: "LIVE_TEST_NEEDED"
+        severity: "LOW"
+        description: "Live call testing required"
+        solution: "Call +61720004410 to verify AI responds"
 
     dependencies:
       - "twilio"
@@ -128,7 +136,7 @@ projects:
 
       admin_dashboard:
         url: "https://aiva.help/admin/"
-        auth: "Bearer aiva2025admin"
+        auth: "Firebase Secret (ADMIN_API_SECRET) - rotated 2025-12-03"
         features: ["Lead stats", "Source breakdown", "Campaign performance", "Hot leads", "Audience export"]
 
     # Payment System - FULLY DEPLOYED
@@ -137,7 +145,7 @@ projects:
       platform: "stripe"
       mode: "live"
       webhook: "stripeWebhook function"
-      webhook_secret: "whsec_OcajI6Lr13q0ojTGBc8JJe4NDIxRu37q"
+      webhook_secret: "Firebase Secret (STRIPE_WEBHOOK_SECRET) - NEVER commit actual secrets"
       products:
         - name: "Starter"
           price: "$49/mo"
@@ -372,25 +380,30 @@ revenue:
   blocked_by:
     - project: "vetsorcery"
       amount: "$10,000"
-      reason: "Backend not deployed"
+      reason: "DEPLOYED - Ready for customers"
+      status: "UNBLOCKED"
     - project: "aiva_help"
       amount: "$5,000"
-      reason: "Ready for sales - FB CAPI in progress"
+      reason: "Ready for sales - all systems operational"
+      status: "UNBLOCKED"
     - project: "influential_digital"
       amount: "$3,000"
       reason: "Needs Stripe live keys"
+      status: "BLOCKED"
 
   quick_wins:
     - action: "Close first AIVA customer"
       unlock: "$600/year"
       effort: "1 call + 15 min GHL setup"
       status: "READY"
-    - action: "Deploy VetSorcery backend"
+    - action: "Test VetSorcery live call"
       unlock: "$10,000/month"
-      effort: "2 hours"
+      effort: "5 minutes"
+      status: "READY"
     - action: "Configure Stripe for Influential"
       unlock: "$3,000/month"
       effort: "30 minutes"
+      status: "PENDING"
 
   aiva_marketing_status:
     lead_capture: "OPERATIONAL"
