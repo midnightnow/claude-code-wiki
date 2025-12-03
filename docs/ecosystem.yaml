@@ -1,0 +1,373 @@
+# =============================================================================
+# HARDCARD ECOSYSTEM STATE FILE
+# Machine-readable source of truth for all revenue projects
+# Generated: 2025-12-03
+# Update: Run `wiki status` to regenerate from live checks
+# =============================================================================
+
+meta:
+  version: "1.0.0"
+  last_updated: "2025-12-03T10:00:00Z"
+  owner: "studio"
+  total_projects: 5
+  revenue_blocked: "$18,000/month"
+
+# =============================================================================
+# TIER 0: CRITICAL - Revenue-blocking, deploy immediately
+# =============================================================================
+projects:
+  vetsorcery:
+    tier: 0
+    status: "ACTION_REQUIRED"
+    description: "AI Phone Agent for Veterinary Clinics"
+    revenue_potential: "$10,000/month"
+
+    frontend:
+      status: "DEPLOYED"
+      url: "https://vetsorcery.com"
+      platform: "firebase-hosting"
+      project_id: "vetsorcery"
+
+    backend:
+      status: "NOT_DEPLOYED"
+      local_path: "/Users/studio/vetsorcery"
+      deployment_target: "render.com"
+      config_file: "render.yaml"
+      entry_point: "main_production:app"
+      port: 8000
+      health_check: "/health"
+
+    blockers:
+      - id: "BACKEND_NOT_DEPLOYED"
+        severity: "CRITICAL"
+        description: "FastAPI backend not deployed to production"
+        solution: "Deploy using render.yaml"
+      - id: "TWILIO_NOT_CONFIGURED"
+        severity: "CRITICAL"
+        description: "No Twilio phone number with webhook"
+        solution: "Buy number, configure webhook to backend URL"
+      - id: "ENV_VARS_MISSING"
+        severity: "HIGH"
+        description: "Production secrets not set"
+        required_vars:
+          - "TWILIO_ACCOUNT_SID"
+          - "TWILIO_AUTH_TOKEN"
+          - "TWILIO_PHONE_NUMBER"
+          - "OPENAI_API_KEY"
+          - "FIREBASE_SERVICE_ACCOUNT_KEY"
+
+    dependencies:
+      - "twilio"
+      - "openai"
+      - "firebase"
+      - "redis"
+
+    next_action:
+      type: "DEPLOY"
+      command: "/Users/studio/claude-code-wiki/scripts/deploy-vetsorcery.sh"
+      estimated_time: "30 minutes"
+
+  # ---------------------------------------------------------------------------
+  aiva_help:
+    tier: 0
+    status: "OPERATIONAL"
+    description: "AI Voice Assistant SaaS for Professional Practices"
+    revenue_potential: "$5,000/month"
+
+    frontend:
+      status: "DEPLOYED"
+      url: "https://aiva.help"
+      platform: "firebase-hosting"
+      project_id: "influential-digital-2025"
+      hosting_site: "aiva-help"
+
+    backend:
+      status: "DEPLOYED"
+      url: "https://aiva-voice-api.onrender.com"
+      platform: "render.com"
+      local_path: "/Users/studio/aiva-help-deploy/aiva-voice-api"
+      health_check: "/health"
+
+    # Marketing Intelligence System - FULLY DEPLOYED
+    marketing:
+      status: "OPERATIONAL"
+      tracking:
+        gtm: "GTM-PBXJ52FC"
+        fb_pixel: "1098204243523075"
+        clarity: "qf8j4qwo8l"
+        custom_tracker: "/public/js/aiva-tracker.js"
+
+      functions:
+        - name: "trackEvent"
+          status: "DEPLOYED"
+          purpose: "Page views, scroll depth, CTA clicks"
+        - name: "trackLead"
+          status: "DEPLOYED"
+          purpose: "Lead capture with scoring + story strategy"
+        - name: "getMarketingAnalytics"
+          status: "DEPLOYED"
+          purpose: "Admin dashboard data aggregation"
+        - name: "exportRetargetingAudience"
+          status: "DEPLOYED"
+          purpose: "FB/Google custom audience export"
+
+      lead_scoring:
+        status: "ACTIVE"
+        grades: ["A (80+)", "B (60-79)", "C (40-59)", "D (0-39)"]
+        factors:
+          - "Source quality (30 pts)"
+          - "Industry fit (25 pts)"
+          - "Completeness (20 pts)"
+          - "Engagement (15 pts)"
+          - "Campaign (10 pts)"
+
+      story_crafting:
+        status: "ACTIVE"
+        narratives: ["answer (Google)", "dream (Facebook)", "expert (LinkedIn)", "club (Referral)", "home (Direct)"]
+        sequences: ["VIP Founder Outreach", "Case Study", "Educational Nurture", "Long-term Drip"]
+
+      admin_dashboard:
+        url: "https://aiva.help/admin/"
+        auth: "Bearer aiva2025admin"
+        features: ["Lead stats", "Source breakdown", "Campaign performance", "Hot leads", "Audience export"]
+
+    # Payment System - FULLY DEPLOYED
+    payments:
+      status: "OPERATIONAL"
+      platform: "stripe"
+      mode: "live"
+      webhook: "stripeWebhook function"
+      webhook_secret: "whsec_OcajI6Lr13q0ojTGBc8JJe4NDIxRu37q"
+      products:
+        - name: "Starter"
+          price: "$49/mo"
+          price_id: "price_1SYn98QtktamRZKg3e8CeI53"
+        - name: "Professional"
+          price: "$99/mo"
+          price_id: "price_1SYnDYQtktamRZKgGPHE2sgK"
+        - name: "Enterprise"
+          price: "$249/mo"
+          price_id: "price_1SYzjnQtktamRZKgpEaPM6R2"
+      setup_fee: "$499"
+
+    # Callback System - DEPLOYED
+    callback:
+      status: "DEPLOYED"
+      documentation: "/docs/aiva-callback-system.md"
+      functions: ["ghlCallbackTrigger", "aivaTwilioBridge", "twilioCallStatus"]
+      ghl_number: "+61 468 080 000"
+
+    recent_changes:
+      - date: "2025-12-03"
+        description: "Facebook CAPI fully operational - server-side conversion tracking"
+      - date: "2025-12-03"
+        description: "Story Crafting system deployed - automated narrative selection"
+      - date: "2025-12-03"
+        description: "Microsoft Clarity enabled on all pages"
+      - date: "2025-12-03"
+        description: "Lead scoring with grades A/B/C/D"
+      - date: "2025-12-03"
+        description: "Marketing Intelligence functions deployed"
+      - date: "2025-12-02"
+        description: "FB Lead pixel fixed - now fires on form submit"
+      - date: "2025-12-02"
+        description: "Stripe webhooks operational"
+
+    blockers:
+      - id: "FB_CAPI_TOKEN"
+        severity: "RESOLVED"
+        description: "Facebook CAPI token configured for iOS conversion tracking"
+        solution: "Direct token integration - COMPLETED 2025-12-03"
+        status: "COMPLETED"
+      - id: "GHL_AUTOMATION"
+        severity: "LOW"
+        description: "GHL sub-account provisioning is manual"
+        solution: "Build provisionGHL function with GHL API"
+
+    firestore_collections:
+      - "aiva_leads"
+      - "aiva_events"
+      - "aiva_visitors"
+      - "aiva_subscriptions"
+      - "aiva_setup_requests"
+      - "callback-requests"
+
+    next_action:
+      type: "CONFIGURE"
+      description: "Complete Stape CAPI Gateway setup for FB conversion tracking"
+      estimated_time: "10 minutes"
+
+# =============================================================================
+# TIER 1: HIGH - Ready for launch, minor blockers
+# =============================================================================
+
+  influential_digital:
+    tier: 1
+    status: "DEPLOYED"
+    description: "Digital Marketing Agency Website"
+    revenue_potential: "$3,000/month"
+
+    frontend:
+      status: "DEPLOYED"
+      url: "https://influential.digital"
+      platform: "firebase-hosting"
+      project_id: "influential-digital-2025"
+      local_path: "/Users/studio/influential-digital-site"
+
+    backend:
+      status: "NOT_REQUIRED"
+      notes: "Static site with Stripe checkout"
+
+    blockers:
+      - id: "STRIPE_CHECKOUT"
+        severity: "MEDIUM"
+        description: "Stripe checkout needs live keys"
+
+    next_action:
+      type: "CONFIGURE"
+      description: "Set Stripe live keys"
+      estimated_time: "15 minutes"
+
+  # ---------------------------------------------------------------------------
+  business_basics:
+    tier: 1
+    status: "DEPLOYED"
+    description: "Business Formation Services"
+    revenue_potential: "$2,000/month"
+
+    frontend:
+      status: "DEPLOYED"
+      url: "https://businessbasics.site"
+      platform: "firebase-hosting"
+      project_id: "businessbasics"
+      local_path: "/Users/studio/portfolio-businessbasics"
+
+    functions:
+      status: "DEPLOYED"
+      platform: "firebase-functions"
+      endpoints:
+        - "/quoteRequest"
+        - "/submitApplication"
+
+    blockers: []
+
+    next_action:
+      type: "MARKETING"
+      description: "Content marketing campaign"
+      estimated_time: "ongoing"
+
+# =============================================================================
+# TIER 2: MEDIUM - Functional but needs optimization
+# =============================================================================
+
+  hardcard:
+    tier: 2
+    status: "DEPLOYED"
+    description: "AI Development Platform"
+    revenue_potential: "$1,000/month"
+
+    frontend:
+      status: "DEPLOYED"
+      url: "https://hardcard.io"
+      platform: "firebase-hosting"
+      project_id: "hardcard"
+
+    next_action:
+      type: "OPTIMIZE"
+      description: "Performance optimization"
+
+# =============================================================================
+# INFRASTRUCTURE & TOOLS
+# =============================================================================
+
+infrastructure:
+  firebase:
+    total_projects: 20
+    estimated_active: 8
+    audit_needed: true
+    audit_script: "/Users/studio/claude-code-wiki/scripts/firebase-audit.sh"
+
+  render:
+    services:
+      - name: "aiva-voice-api"
+        status: "running"
+        plan: "starter"
+      - name: "vetsorcery-api"
+        status: "not_deployed"
+        plan: "starter"
+
+  domains:
+    - domain: "vetsorcery.com"
+      status: "active"
+      dns: "firebase"
+    - domain: "aiva.help"
+      status: "active"
+      dns: "firebase"
+    - domain: "influential.digital"
+      status: "active"
+      dns: "firebase"
+    - domain: "businessbasics.site"
+      status: "active"
+      dns: "firebase"
+
+# =============================================================================
+# AUTOMATION SCRIPTS
+# =============================================================================
+
+scripts:
+  deploy_vetsorcery:
+    path: "/Users/studio/claude-code-wiki/scripts/deploy-vetsorcery.sh"
+    description: "One-click VetSorcery backend deployment"
+
+  deploy_aiva:
+    path: "/Users/studio/claude-code-wiki/scripts/deploy-aiva.sh"
+    description: "AIVA Voice API deployment and verification"
+
+  firebase_audit:
+    path: "/Users/studio/claude-code-wiki/scripts/firebase-audit.sh"
+    description: "Audit Firebase projects for cleanup"
+
+  status_check:
+    path: "/Users/studio/claude-code-wiki/scripts/ecosystem-status.sh"
+    description: "Generate live status from all services"
+
+# =============================================================================
+# REVENUE SUMMARY
+# =============================================================================
+
+revenue:
+  current_mrr: "$0"
+  potential_mrr: "$21,000"
+  blocked_by:
+    - project: "vetsorcery"
+      amount: "$10,000"
+      reason: "Backend not deployed"
+    - project: "aiva_help"
+      amount: "$5,000"
+      reason: "Ready for sales - FB CAPI in progress"
+    - project: "influential_digital"
+      amount: "$3,000"
+      reason: "Needs Stripe live keys"
+
+  quick_wins:
+    - action: "Close first AIVA customer"
+      unlock: "$600/year"
+      effort: "1 call + 15 min GHL setup"
+      status: "READY"
+    - action: "Deploy VetSorcery backend"
+      unlock: "$10,000/month"
+      effort: "2 hours"
+    - action: "Configure Stripe for Influential"
+      unlock: "$3,000/month"
+      effort: "30 minutes"
+
+  aiva_marketing_status:
+    lead_capture: "OPERATIONAL"
+    lead_scoring: "OPERATIONAL"
+    story_crafting: "OPERATIONAL"
+    fb_pixel: "OPERATIONAL"
+    fb_capi: "OPERATIONAL"  # Fixed 2025-12-03 - Direct token integration
+    clarity_heatmaps: "OPERATIONAL"
+    admin_dashboard: "OPERATIONAL"
+    stripe_payments: "OPERATIONAL"
+    ghl_automation: "MANUAL"
